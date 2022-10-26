@@ -14,23 +14,15 @@
  * to declare a variable var of the type
  */ 
 
-__data __at (0x20) char buf[10];
-__data __at (0x2A) char BUF_SIZE;
-__data __at (0x2B) char BUF_IN;
-__data __at (0x2C) char BUF_OUT;
+__data __at (0x20) char BUF;
+__data __at (0x21) char BUF_AVALIABLE;
+__data __at (0x22) char next_produced;
 
 /* TODO: [8 pts] for this function
  * the producer in this test program generates one characters at a
  * time from 'A' to 'Z' and starts from 'A' again. The shared buffer
  * must be empty in order for the Producer to write.
  */
-char make_item(void) {
-	static char c = 'A'; 
-	if (c > 'Z') { 
-		c = 'A';
-	}
-	return c++;
-}
 
 void Producer(void) {
 	/*
@@ -38,17 +30,16 @@ void Producer(void) {
 	 * initialize producer data structure, and then enter
 	 * an infinite loop (does not return)
 	 */
-	char next_produced;
+	next_produced = 'A';
 	while (1) {
 		/* TODO: [6 pt]
 		* wait for the buffer to be available, 
 		* and then write the new data into the buffer */
-		next_produced = make_item();
-		while((BUF_IN + 1) % BUF_SIZE == BUF_OUT) { // buffer is full
-			ThreadYield();
-		}
-		buf[BUF_IN] = next_produced;
-		BUF_IN = (BUF_IN + 1) % BUF_SIZE;
+		while(BUF_AVALIABLE == 1) ThreadYield(); // buf is full
+		BUF = next_produced;
+		BUF_AVALIABLE = 1;
+		if(next_produced == 'Z') next_produced = 'A';
+		else next_produced++;
 	}
 	
 }
@@ -61,22 +52,22 @@ void Producer(void) {
 void Consumer(void) {
 	/* TODO: [2 pt] initialize Tx for polling */
 	TMOD = 0x20;
-	TH1 = -6;
+	TH1  = -6;
 	SCON = 0x50;
-	TR1 = 1;
+	TR1  = 1;
 	while (1) {
 		/* TODO: [2 pt] wait for new data from producer
 		 * TODO: [6 pt] write data to serial port Tx, 
 		 * poll for Tx to finish writing (TI),
 		 * then clear the flag
 		 */
-		while(BUF_IN % BUF_SIZE == BUF_OUT) { // buffer is empty
-			ThreadYield();
-		}
-		while(!TI) ThreadYield();
-		SBUF = buf[BUF_OUT];
+		while(BUF_AVALIABLE == 0) ThreadYield(); // buffer is empty
+		
+		SBUF = BUF;
+		BUF_AVALIABLE = 0;
+		
+		while(!TI); // FIXME: something wrong here if call yield()
 		TI = 0;
-		BUF_OUT = (BUF_OUT + 1) % BUF_SIZE;	
 	}
 }
 
@@ -94,10 +85,8 @@ void main(void) {
 	 */
 
 	// FIXME: buffer initialization fails
-	// buf[10] = {0};
-	BUF_SIZE = 10;
-	BUF_IN = 0;
-	BUF_OUT = 0;
+	// BUF[10] = {0};
+	BUF_AVALIABLE = 0;
 
 	// FIXME: uncertain about this
 	ThreadID temp_id = ThreadCreate(Producer);
