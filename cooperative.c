@@ -19,7 +19,6 @@ __data __at (0x35) char threadID_current;
 __data __at (0x36) char threadID_new;
 __data __at (0x37) char thread_count;
 __data __at (0x38) char temp_sp;
-__data __at (0x39) char i;
 
 
 /*
@@ -164,7 +163,7 @@ ThreadID ThreadCreate(FunctionPtr fp) {
 		push DPH \
 	__endasm;
 	__asm \
-      ANL A, #0
+      CLR A
 		push ACC \
 		push ACC \
 		push ACC \
@@ -241,6 +240,7 @@ void ThreadExit(void) {
    }while(!((1 << threadID_current) & bitmap))
 	*/
 
+   int i;
    thread_bitmap ^= (1<<threadID_current);
    for(i=0 ; i < 4 ; i++)
       if(thread_bitmap & (1<<i)){
