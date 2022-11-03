@@ -87,7 +87,7 @@ void main(void) {
 	// FIXME: buffer initialization fails
 	// BUF[10] = {0};
 	BUF_AVALIABLE = 0;
-	BUF = 0;
+
 	// FIXME: uncertain about this
 	ThreadID temp_id = ThreadCreate(Producer);
 	Consumer();
