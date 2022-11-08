@@ -14,12 +14,12 @@ CFLAGS = -c
 LDFLAGS = 
 #--stack-after-data --stack-loc 0x39 --data-loc 0x20
 
-C_OBJECTS = testpreempt.rel preemptive.rel
+C_OBJECTS = testcoop.rel cooperative.rel
 
-all: testpreempt.hex
+all: testcoop.hex
 
 testcoop.hex:   $(C_OBJECTS) $(ASM_OBJECTS)
-				$(CC) $(LDFLAGS) -o testpreempt.hex $(C_OBJECTS)
+				$(CC) $(LDFLAGS) -o testcoop.hex $(C_OBJECTS)
 
 clean:
 	rm *.hex *.ihx *.lnk *.lst *.map *.mem *.rel *.rst *.sym   *.lk *.asm
@@ -27,5 +27,5 @@ clean:
 # use in windows env	
 clear:
 	del *.hex *.ihx *.lnk *.lst *.map *.mem *.rel *.rst *.sym   *.lk *.asm
-%.rel:  %.c    preemptive.h Makefile
+%.rel:  %.c    cooperative.h Makefile
 	$(CC) $(CFLAGS) $<
