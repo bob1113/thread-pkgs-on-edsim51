@@ -1,5 +1,5 @@
 #
-# makefile for testing cooperative multithreading
+# makefile for testing preemptive multithreading
 #
 # This assumes you have SDCC installed and this targets EdSim51.
 # The generated .hex file should be one that can be loaded and run
@@ -18,7 +18,7 @@ C_OBJECTS = testpreempt.rel preemptive.rel
 
 all: testpreempt.hex
 
-testcoop.hex:   $(C_OBJECTS) $(ASM_OBJECTS)
+testpreempt.hex:   $(C_OBJECTS) $(ASM_OBJECTS)
 				$(CC) $(LDFLAGS) -o testpreempt.hex $(C_OBJECTS)
 
 clean:
