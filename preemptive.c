@@ -93,7 +93,8 @@ void Bootstrap(void) {
 	TR0  = 1;    // set bit TR0 to start running timer 0
 
 	thread_bitmap = 0b0000;
-	threadID_current = ThreadCreate(main);
+   ThreadCreate(main);
+	threadID_current = 0;
 	RESTORESTATE;
 }
 
