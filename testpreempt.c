@@ -35,10 +35,10 @@ void Producer(void) {
 	next_produced = 'A';
 	while (1) {
 		if(BUF_AVALIABLE == 0){
-            __critical {
-                BUF = next_produced;
-                BUF_AVALIABLE = 1;
-            }
+            EA = 0;
+			BUF = next_produced;
+			BUF_AVALIABLE = 1;
+            EA = 1;
             if(next_produced == 'Z') next_produced = 'A';
             else next_produced++;
         }
@@ -60,10 +60,10 @@ void Consumer(void) {
 		 * write data to serial port Tx
 		 */
 	    if(BUF_AVALIABLE == 1) {
-            SBUF = BUF;
-            __critical {
-    		    BUF_AVALIABLE = 0;
-            }
+			EA = 0;
+			SBUF = BUF;
+			BUF_AVALIABLE = 0;
+            EA = 1;
     		while(!TI);
 	    	TI = 0;
         }

@@ -104,6 +104,7 @@ void Bootstrap(void) {
  * return no argument.
  */
 ThreadID ThreadCreate(FunctionPtr fp) {
+   EA = 0;
    /*
    * TODO: [2 pts] 
    * check to see we have not reached the max #threads.
@@ -112,76 +113,75 @@ ThreadID ThreadCreate(FunctionPtr fp) {
    if(thread_bitmap == 0b1111) {
       return -1;
    }
-   __critical {  
-      /*
-      * TODO: [5 pts]
-      *     otherwise, find a thread ID that is not in use,
-      *     and grab it. (can check the bit mask for threads),
-      *
-      * TODO: [18 pts] below
-      *  a. update the bit mask 
-            (and increment thread count, if you use a thread count, 
-            but it is optional) 
-         b. calculate the starting stack location for new thread
-         c. save the current SP in a temporary
-            set SP to the starting location for the new thread
-         d. push the return address fp (2-byte parameter to
-            ThreadCreate) onto stack so it can be the return
-            address to resume the thread. Note that in SDCC
-            convention, 2-byte ptr is passed in DPTR.  but
-            push instruction can only push it as two separate
-            registers, DPL and DPH.
-         e. we want to initialize the registers to 0, so we
-            assign a register to 0 and push it four times
-            for ACC, B, DPL, DPH.  Note: push #0 will not work
-            because push takes only direct address as its operand,
-            but it does not take an immediate (literal) operand.
-         f. finally, we need to push PSW (processor status word)
-            register, which consist of bits
-            CY AC F0 RS1 RS0 OV UD P
-            all bits can be initialized to zero, except <RS1:RS0>
-            which selects the register bank.  
-            Thread 0 uses bank 0, Thread 1 uses bank 1, etc.
-            Setting the bits to 00B, 01B, 10B, 11B will select 
-            the register bank so no need to push/pop registers
-            R0-R7.  So, set PSW to 
-            00000000B for thread 0, 00001000B for thread 1,
-            00010000B for thread 2, 00011000B for thread 3.
-         g. write the current stack pointer to the saved stack
-            pointer array for this newly created thread ID
-         h. set SP to the saved SP in step c.
-         i. finally, return the newly created thread ID.
-      */
+   /*
+   * TODO: [5 pts]
+   *     otherwise, find a thread ID that is not in use,
+   *     and grab it. (can check the bit mask for threads),
+   *
+   * TODO: [18 pts] below
+   *  a. update the bit mask 
+         (and increment thread count, if you use a thread count, 
+         but it is optional) 
+      b. calculate the starting stack location for new thread
+      c. save the current SP in a temporary
+         set SP to the starting location for the new thread
+      d. push the return address fp (2-byte parameter to
+         ThreadCreate) onto stack so it can be the return
+         address to resume the thread. Note that in SDCC
+         convention, 2-byte ptr is passed in DPTR.  but
+         push instruction can only push it as two separate
+         registers, DPL and DPH.
+      e. we want to initialize the registers to 0, so we
+         assign a register to 0 and push it four times
+         for ACC, B, DPL, DPH.  Note: push #0 will not work
+         because push takes only direct address as its operand,
+         but it does not take an immediate (literal) operand.
+      f. finally, we need to push PSW (processor status word)
+         register, which consist of bits
+         CY AC F0 RS1 RS0 OV UD P
+         all bits can be initialized to zero, except <RS1:RS0>
+         which selects the register bank.  
+         Thread 0 uses bank 0, Thread 1 uses bank 1, etc.
+         Setting the bits to 00B, 01B, 10B, 11B will select 
+         the register bank so no need to push/pop registers
+         R0-R7.  So, set PSW to 
+         00000000B for thread 0, 00001000B for thread 1,
+         00010000B for thread 2, 00011000B for thread 3.
+      g. write the current stack pointer to the saved stack
+         pointer array for this newly created thread ID
+      h. set SP to the saved SP in step c.
+      i. finally, return the newly created thread ID.
+   */
 
-      if 	 (!(thread_bitmap & 0b0001)) {threadID_new = 0; thread_bitmap |= 1;}
-      else if(!(thread_bitmap & 0b0010)) {threadID_new = 1; thread_bitmap |= 2;}
-      else if(!(thread_bitmap & 0b0100)) {threadID_new = 2; thread_bitmap |= 4;}
-      else if(!(thread_bitmap & 0b1000)) {threadID_new = 3; thread_bitmap |= 8;}
+   if 	 (!(thread_bitmap & 0b0001)) {threadID_new = 0; thread_bitmap |= 1;}
+   else if(!(thread_bitmap & 0b0010)) {threadID_new = 1; thread_bitmap |= 2;}
+   else if(!(thread_bitmap & 0b0100)) {threadID_new = 2; thread_bitmap |= 4;}
+   else if(!(thread_bitmap & 0b1000)) {threadID_new = 3; thread_bitmap |= 8;}
 
-      temp_sp = SP;
-      SP = 0x3F + 16 * threadID_new;
+   temp_sp = SP;
+   SP = 0x3F + 16 * threadID_new;
 
-      __asm \
-         push DPL \
-         push DPH \
-      __endasm;
-      __asm \
-         CLR A
-         push ACC \
-         push ACC \
-         push ACC \
-         push ACC \
-      __endasm;
+   __asm \
+      push DPL \
+      push DPH \
+   __endasm;
+   __asm \
+      CLR A
+      push ACC \
+      push ACC \
+      push ACC \
+      push ACC \
+   __endasm;
 
-      PSW = threadID_new << 3;
+   PSW = threadID_new << 3;
 
-      __asm \
-         push PSW \
-      __endasm;
+   __asm \
+      push PSW \
+   __endasm;
 
-      saved_sp[threadID_new] = SP;
-      SP = temp_sp;
-   }
+   saved_sp[threadID_new] = SP;
+   SP = temp_sp;
+   EA = 1;
    return threadID_new;
 }
 
@@ -192,28 +192,28 @@ ThreadID ThreadCreate(FunctionPtr fp) {
  * ID to it), if any, and then restores its state.
  */
 void ThreadYield(void) {
-   __critical {
-      SAVESTATE;
-      do {
-         /*
-            * TODO: [8 pts] do round-robin policy for now.
-            * find the next thread that can run and 
-            * set the current thread ID to it,
-            * so that it can be restored (by the last line of 
-            * this function).
-            * there should be at least one thread, so this loop
-            * will always terminate.
-            */
-         
-         if(threadID_current < 3) 
-            threadID_current++;
-         else 
-            threadID_current = 0;
-         if((1 << threadID_current) & thread_bitmap)
-            break;
-      } while (1);
-      RESTORESTATE;
-   }
+   EA = 0;
+   SAVESTATE;
+   do {
+      /*
+         * TODO: [8 pts] do round-robin policy for now.
+         * find the next thread that can run and 
+         * set the current thread ID to it,
+         * so that it can be restored (by the last line of 
+         * this function).
+         * there should be at least one thread, so this loop
+         * will always terminate.
+         */
+      
+      if(threadID_current < 3) 
+         threadID_current++;
+      else 
+         threadID_current = 0;
+      if((1 << threadID_current) & thread_bitmap)
+         break;
+   } while (1);
+   RESTORESTATE;
+   EA = 1;
 }
 
 
@@ -223,58 +223,59 @@ void ThreadYield(void) {
  * to another thread.
  */
 void ThreadExit(void) {
-   __critical {
-      /*
-      * clear the bit for the current thread from the
-      * bit mask, decrement thread count (if any),
-      * and set current thread to another valid ID.
-      * Q: What happens if there are no more valid threads?
-      */
-      int i;
-      thread_bitmap ^= (1<<threadID_current);
-      for(i=0 ; i < 4 ; i++)
-         if(thread_bitmap & (1<<i)){
-            threadID_current = i;
-               break;
-         }
-      if( i == 4 ) threadID_current = -1;
-      RESTORESTATE;
-   }
+   EA = 0;
+   /*
+   * clear the bit for the current thread from the
+   * bit mask, decrement thread count (if any),
+   * and set current thread to another valid ID.
+   * Q: What happens if there are no more valid threads?
+   */
+   int i;
+   thread_bitmap ^= (1<<threadID_current);
+   for(i=0 ; i < 4 ; i++)
+      if(thread_bitmap & (1<<i)){
+         threadID_current = i;
+            break;
+      }
+   if( i == 4 ) threadID_current = -1;
+   RESTORESTATE;
+   EA = 1;
 }
 
 void myTimer0Handler(void) {
-   __critical {
-      SAVESTATE;
-      __asm\
-         MOV 0x38, R0\
-         MOV 0x39, R1\
-         MOV 0x3A, R2\
-         MOV 0x3B, R3\
-         MOV 0x3C, R4\
-         MOV 0x3D, R5\
-         MOV 0x3E, R6\
-         MOV 0x3F, R7\
-      __endasm;
-      do {         
-         if(threadID_current < 3) 
-            threadID_current++;
-         else 
-            threadID_current = 0;
-         if((1 << threadID_current) & thread_bitmap)
-            __asm\
-               MOV R0, 0x38\
-               MOV R1, 0x39\
-               MOV R2, 0x3A\
-               MOV R3, 0x3B\
-               MOV R4, 0x3C\
-               MOV R5, 0x3D\
-               MOV R6, 0x3E\
-               MOV R7, 0x3F\
-            __endasm;   
-            RESTORESTATE;
-            __asm \
-               RETI \
-            __endasm;
-      } while (1);
-   }  
+   EA = 0;
+   SAVESTATE;
+   __asm\
+      MOV 0x38, R0\
+      MOV 0x39, R1\
+      MOV 0x3A, R2\
+      MOV 0x3B, R3\
+      MOV 0x3C, R4\
+      MOV 0x3D, R5\
+      MOV 0x3E, R6\
+      MOV 0x3F, R7\
+   __endasm;
+   do {         
+      if(threadID_current < 3) 
+         threadID_current++;
+      else 
+         threadID_current = 0;
+      if((1 << threadID_current) & thread_bitmap)
+      break;
+   } while (1);
+   __asm\
+      MOV R0, 0x38\
+      MOV R1, 0x39\
+      MOV R2, 0x3A\
+      MOV R3, 0x3B\
+      MOV R4, 0x3C\
+      MOV R5, 0x3D\
+      MOV R6, 0x3E\
+      MOV R7, 0x3F\
+   __endasm;   
+   RESTORESTATE;
+   EA = 1;
+   __asm \
+      RETI \
+   __endasm;
 }
