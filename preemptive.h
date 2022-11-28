@@ -14,28 +14,28 @@
 #define MAXTHREADS 4  /* not including the scheduler */
 /* the scheduler does not take up a thread of its own */
 
-#define SemaphoreCreate(s, n) \     // create a counting semaphore s that is initialized to n
-{	__asm \
-		MOV s, #n \
-	__endasm;
-}
-
 #define CNAME(s) _ ## s
 
-#define SemaphoreSignal(s) \   // signal() semaphore s
-{	__asm \
-		INC CNAME(s) \
-	__endasm;
+#define SemaphoreCreate(s, n) \
+{   __asm \
+        MOV s, n \
+    __endasm; \
 }
 
-#define SemaphoreWait(S,  __COUNTER__ ) \
+#define SemaphoreSignal(s) \
+{	__asm \
+		INC CNAME(s) \
+	__endasm; \
+}
+
+#define SemaphoreWait(s, label) \
 {   __asm \
-    __COUNTER__ : \
-        MOV A, s \
-        JB ACC.7 label ;; negative \
-        JZ label ;; zero \
-        dec  CNAME(S) \
-    __endasm;
+        label: \
+            MOV A, s \
+            JB ACC.7, label ;; negative \
+            JZ label ;; zero \
+            dec CNAME(s) \
+    __endasm; \
 }
 
 typedef char ThreadID;
