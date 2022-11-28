@@ -16,11 +16,11 @@
 
 #define CNAME(s) _ ## s
 
-#define SemaphoreCreate(s, n) \
-{   __asm \
-        MOV s, n \
-    __endasm; \
-}
+// #define SemaphoreCreate(s, n) \
+// {   __asm \
+//         MOV CNAME(s), n \
+//     __endasm; \
+// }
 
 #define SemaphoreSignal(s) \
 {	__asm \
@@ -31,7 +31,7 @@
 #define SemaphoreWait(s, label) \
 {   __asm \
         label: \
-            MOV A, s \
+            MOV A, CNAME(s) \
             JB ACC.7, label ;; negative \
             JZ label ;; zero \
             dec CNAME(s) \

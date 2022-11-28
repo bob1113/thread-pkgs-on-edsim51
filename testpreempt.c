@@ -51,7 +51,6 @@ void Producer(void) {
 		SemaphoreSignal(full);
 		if(next_produced == 'Z') next_produced = 'A';
 		else next_produced++;
-
 	}
 	
 }
@@ -91,12 +90,13 @@ void main(void) {
 	 * TODO: 
      * initialize globals & set up Producer and Consumer
 	 */
+	mutex = 1;	// SemaphoreCreate(mutex, 1);
+	full = 0;	// SemaphoreCreate(full, 0);
+	empty = 3;	// SemaphoreCreate(empty, 3);
+
 	BUF_SIZE = 3;
 	BUF_HEAD = 0;
 	BUF_TAIL = 0;
-	SemaphoreCreate(mutex, 1);
-	SemaphoreCreate(full, 0);
-	SemaphoreCreate(empty, 1);
 	ThreadCreate(Producer);
 	Consumer();
 }
