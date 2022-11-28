@@ -16,11 +16,11 @@
 
 #define CNAME(s) _ ## s
 
-// #define SemaphoreCreate(s, n) \
-// {   __asm \
-//         MOV CNAME(s), n \
-//     __endasm; \
-// }
+#define SemaphoreCreate(s, n) \
+{   __asm \
+        MOV CNAME(s), n \
+    __endasm; \
+}
 
 #define SemaphoreSignal(s) \
 {	__asm \
