@@ -26,6 +26,10 @@ __data __at (0x20) char BUF;
 __data __at (0x21) char BUF_AVALIABLE;
 __data __at (0x22) char next_produced;
 
+__data __at (0x23) char mutex; 
+__data __at (0x24) char full;
+__data __at (0x25) char empty;
+
 /* 
  * TODO: 
  * revise Producer function into preemptive ver.
@@ -35,10 +39,12 @@ void Producer(void) {
 	next_produced = 'A';
 	while (1) {
 		if(BUF_AVALIABLE == 0){
-            EA = 0;
+			SemaphoreWait(empty);
+			SemaphoreWait(mutex);
 			BUF = next_produced;
 			BUF_AVALIABLE = 1;
-            EA = 1;
+			SemaphoreSignal(mutex);
+			SemaphoreSignal(full);
             if(next_produced == 'Z') next_produced = 'A';
             else next_produced++;
         }
@@ -60,10 +66,12 @@ void Consumer(void) {
 		 * write data to serial port Tx
 		 */
 	    if(BUF_AVALIABLE == 1) {
-			EA = 0;
+			SemaphoreWait(full);
+			SemaphoreWait(mutex);
 			SBUF = BUF;
 			BUF_AVALIABLE = 0;
-            EA = 1;
+			SemaphoreSignal(mutex);
+			SemaphoreSignal(empty);
     		while(!TI);
 	    	TI = 0;
         }
@@ -82,6 +90,9 @@ void main(void) {
 	 */
 	BUF_AVALIABLE = 0;
 	BUF = 0;
+	SemaphoreCreate(mutex, 1);
+	SemaphoreCreate(full, 0);
+	SemaphoreCreate(empty, 1);
 	ThreadCreate(Producer);
 	Consumer();
 }
