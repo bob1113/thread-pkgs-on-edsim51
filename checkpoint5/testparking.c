@@ -27,7 +27,7 @@ void timer0_ISR(void) __interrupt(1) {
 
 __data __at (0x38) char SBUF_MUTEX;
 __data __at (0x34) char sem;
-__data __at (0x21) char spotsEmpty;
+__data __at (0x21) char spots_empty;
 __data __at (0x22) char make_car;
 __data __at (0x23) char spot0;
 __data __at (0x24) char spot1;
@@ -98,7 +98,7 @@ void print_time(void) {
 void MakeCar(void) {
 	
 	// SemaphoreWait(make_car, label);
-	SemaphoreWait(spotsEmpty, label);
+	SemaphoreWait(spots_empty, label);
 	
 	EA = 0;
 	SemaphoreWait(sem, label);
@@ -117,7 +117,7 @@ void MakeCar(void) {
 	SemaphoreSignal(sem);
 	EA = 1;
 
-	delay(2);
+	delay(10);
 
 	EA = 0;
 	SemaphoreWait(sem, label);
@@ -136,7 +136,7 @@ void MakeCar(void) {
 	SemaphoreSignal(sem);
 	EA = 1;
 
-	SemaphoreSignal ( spotsEmpty );
+	SemaphoreSignal ( spots_empty );
 	SemaphoreSignal ( make_car );
 	
 	ThreadExit();
@@ -147,7 +147,7 @@ void main(void) {
 	
 	// print_now();
 	SemaphoreCreate ( sem, #1 );
-	SemaphoreCreate ( spotsEmpty, #2 );
+	SemaphoreCreate ( spots_empty, #2 );
 	SemaphoreCreate ( make_car, #3 );
 	SemaphoreCreate ( SBUF_MUTEX, #1 );
 
