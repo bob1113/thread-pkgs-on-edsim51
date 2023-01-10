@@ -16,16 +16,22 @@
 
 __data __at (0x35) char threadID_current;
 __data __at (0x3A) unsigned char time;
-__data __at (0x3B) unsigned char thread_time_target[4];
+__data __at (0x3B) unsigned char _time;
+__data __at (0x3C) unsigned char thread_time_target[4];
 
 #define _CONCAT(a, b) a##b
 #define CONCAT(a, b) _CONCAT(a, b)
 #define label CONCAT(__COUNTER__, $)
 
+#define L(x) LABEL(x)
+#define LABEL(x) x##$
+
 #define CNAME(s) _ ## s
 
 #define SemaphoreCreate(s, n) \
-{   s = n;\ }
+{   \
+    s = n; \
+}
 
 #define SemaphoreSignal(s) \
 {	__asm \
