@@ -6,11 +6,12 @@
  * declare the static globals
  */
 __data __at (0x30) char saved_sp[4];      // 30H, 31H, 32H, 33H
-__data __at (0x34) char thread_bitmap;    
+__data __at (0x20) char thread_bitmap;    
 // __data __at (0x35) char threadID_current;
 __data __at (0x36) char threadID_new;
 __data __at (0x37) char temp_sp;
 __data __at (0x38) char i;
+
 
 
 /*
@@ -86,6 +87,7 @@ void Bootstrap(void) {
 		* so that it starts running main().
 		*/
 	time = 0;
+	_time = 0;
 	thread_bitmap = 0b0000;
 	threadID_current = ThreadCreate ( main );
 	RESTORESTATE;
@@ -282,7 +284,11 @@ void myTimer0Handler(void) {
 		PUSH ACC
 	__endasm;
 
-	time += 1;
+	_time += 1;
+	if ( _time == 12 ) {
+		time += 1;
+		_time = 0;
+	}
 
 	do{
 		if (threadID_current < 3) 
@@ -326,10 +332,10 @@ void myTimer0Handler(void) {
 /*
  * TODO:
  */
-void delay(unsigned char n) {
-   thread_time_target[threadID_current] = time + n;
-   while ( thread_time_target[threadID_current] <= time );
-}
+// void delay(unsigned char n) {
+//    thread_time_target[threadID_current] = now() + n;
+//    while ( thread_time_target[threadID_current] > now() );
+// }
 
 
 /*

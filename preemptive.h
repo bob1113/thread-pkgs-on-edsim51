@@ -15,22 +15,24 @@
 /* the scheduler does not take up a thread of its own */
 
 __data __at (0x35) char threadID_current;
-__data __at (0x3A) unsigned char time;
-__data __at (0x3B) unsigned char _time;
+__data __at (0x3A) unsigned char _time;
+__data __at (0x3B) unsigned char time;
 __data __at (0x3C) unsigned char thread_time_target[4];
 
 #define _CONCAT(a, b) a##b
 #define CONCAT(a, b) _CONCAT(a, b)
 #define label CONCAT(__COUNTER__, $)
 
-#define L(x) LABEL(x)
-#define LABEL(x) x##$
+#define delay(n)\
+        thread_time_target[threadID_current] = time + n;\
+        while( thread_time_target[threadID_current] != time );\
 
 #define CNAME(s) _ ## s
 
 #define SemaphoreCreate(s, n) \
-{   \
-    s = n; \
+{    __asm \
+        MOV CNAME(s), n \
+    __endasm; \
 }
 
 #define SemaphoreSignal(s) \
@@ -57,7 +59,7 @@ void ThreadYield(void);
 void ThreadExit(void);
 void myTimer0Handler(void);
 
-void delay(unsigned char n);
+// void delay(unsigned char n);
 unsigned char now(void);
 
 #endif // __PREEMPTIVE_H__
